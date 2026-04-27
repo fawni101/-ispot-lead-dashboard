@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iSpot — Paid Ads Lead Scoring Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F3EE;
+    --surface: #FFFFFF;
+    --border: #E0DDD6;
+    --text: #1A1916;
+    --muted: #7A7870;
+    --accent: #1A1916;
+    --hot: #C13B1B;
+    --hot-bg: #FDF0EC;
+    --warm: #A0620A;
+    --warm-bg: #FEF6EA;
+    --cold: #4A6741;
+    --cold-bg: #EEF4ED;
+    --li-color: #0A66C2;
+    --meta-color: #1877F2;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--text);
+    color: #F5F3EE;
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 6px;
+  }
+
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1.2;
+    color: #F5F3EE;
+  }
+
+  header h1 span {
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  .header-meta {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    opacity: 0.5;
+    line-height: 1.8;
+  }
+
+  .container { padding: 2rem 3rem; max-width: 1400px; margin: 0 auto; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .metric {
+    background: var(--surface);
+    padding: 1.5rem 1.75rem;
+  }
+
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+  }
+
+  .control-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .control-group select {
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .search-group {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-group input {
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    width: 100%;
+  }
+
+  .search-group input::placeholder { color: var(--muted); }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: #FAFAF8;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  thead th:hover { color: var(--text); }
+
+  thead th.sorted { color: var(--text); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #FAFAF8; }
+
+  tbody td { padding: 12px 16px; vertical-align: middle; }
+
+  .name-cell { font-weight: 500; font-size: 14px; }
+  .company-cell { font-size: 13px; color: var(--muted); }
+  .title-cell { font-size: 12px; color: var(--muted); margin-top: 2px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .campaign-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 7px;
+    white-space: nowrap;
+  }
+
+  .platform-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+
+  .platform-li { background: var(--li-color); }
+  .platform-meta { background: var(--meta-color); }
+
+  .score-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 28px;
+  }
+  .score-bar-bg {
+    width: 64px; height: 4px;
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+  .tier-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 3px 10px;
+    border-radius: 99px;
+    text-transform: uppercase;
+  }
+  .tier-hot { background: var(--hot-bg); color: var(--hot); }
+  .tier-warm { background: var(--warm-bg); color: var(--warm); }
+  .tier-cold { background: var(--cold-bg); color: var(--cold); }
+
+  .reason-tag {
+    display: inline-block;
+    font-size: 10px;
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 2px 2px 0 0;
+  }
+
+  .pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: #FAFAF8;
+  }
+
+  .pager-info {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .pager-btns { display: flex; gap: 8px; }
+
+  .pager-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.1s;
+  }
+
+  .pager-btn:hover:not(:disabled) { background: var(--bg); }
+  .pager-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  @media (max-width: 900px) {
+    .container { padding: 1.5rem; }
+    header { padding: 1.5rem; flex-direction: column; gap: 1rem; align-items: flex-start; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .header-meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">iSpot.tv — Marketing</div>
+    <h1>Paid Ads <span>Lead Scoring</span><br>Dashboard</h1>
+  </div>
+  <div class="header-meta">
+    <div>Campaigns: 4</div>
+    <div>Platforms: LinkedIn + Meta</div>
+    <div>Generated: April 2026</div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="metrics" id="metrics"></div>
+
+  <div class="controls">
+    <div class="search-group">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search name, company, title…">
+    </div>
+    <div class="control-group">
+      <label>Campaign</label>
+      <select id="campFilter"><option value="">All</option></select>
+    </div>
+    <div class="control-group">
+      <label>Tier</label>
+      <select id="tierFilter">
+        <option value="">All</option>
+        <option value="Hot">Hot</option>
+        <option value="Warm">Warm</option>
+        <option value="Cold">Cold</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Platform</label>
+      <select id="platFilter">
+        <option value="">All</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="Meta">Meta</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Sort</label>
+      <select id="sortFilter">
+        <option value="score">Score ↓</option>
+        <option value="name">Name A–Z</option>
+        <option value="date">Date ↓</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Title & Company</th>
+          <th>Campaign</th>
+          <th>Platform</th>
+          <th onclick="setSort('score')" id="th-score" class="sorted">Score ↓</th>
+          <th>Tier</th>
+          <th>Signals</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="pager">
+      <span class="pager-info" id="pageInfo"></span>
+      <div class="pager-btns">
+        <button class="pager-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+        <button class="pager-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const raw = [
+  ["Rebecca Ponce","Senior Manager, Marketing & Media- Disney Music Group","The Walt Disney Company","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","4/22/2026"],
+  ["Elyse Denton","Media Supervisor","Two by Four","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","4/10/2026"],
+  ["Justin Roberts","Global Paid Media Leader","Sazerac Company","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","4/5/2026"],
+  ["Jason Haddad","SVP, Media Director","Two by Four","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","3/26/2026"],
+  ["Nicholas Karrat","Chief Marketing Officer","StockX","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/26/2026"],
+  ["Amelia Hay","VP, Startup Programming & Investments","AARP","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/26/2026"],
+  ["Benjamin Simonds","Vice President, Media Sales","National Football League","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","3/18/2026"],
+  ["Gregory Janza","Broadcast Producer & Senior Video Editor","Salesforce","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/15/2026"],
+  ["Michele Alisa James","Director, Global Consumer Insights","Suntory Global Spirits","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/11/2026"],
+  ["Christopher Armstrong","Senior Manager of Sales, Disney Advertising","The Walt Disney Company","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/10/2026"],
+  ["Joanne Zhu","Marketing Partnerships Impact & Insights Manager","Microsoft","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/9/2026"],
+  ["Dustin Hayes","Vice President of Brand Marketing","Comcast Cable Communications","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","3/7/2026"],
+  ["Shane Martins","Senior Manager, Media","Red Bull","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","3/4/2026"],
+  ["Sam Joseph","Freelance Brand Strategy Director","Freelance","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/2/2026"],
+  ["Austin Evans","Founder & CEO","Guala","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","3/1/2026"],
+  ["Victoria von Fritschen","Associate Director, HCP Marketing","Alkermes","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","2/28/2026"],
+  ["Cindy Truong","TV Media Manager","SciPlay","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","2/23/2026"],
+  ["Diego Osuna","Head of Marketing U.S. Retail Fuels","Chevron","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","2/22/2026"],
+  ["Cheryl Coburn","Director of Marketing","NIC Industries","LinkedIn","Contact","26Q1 LinkedIn - Super Bowl LX Report","2/19/2026"],
+  ["Mike Gussiaas","Chief Marketing and Creative Officer","South Dakota Dept of Tourism","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","2/16/2026"],
+  ["Virai Sarvaiya","Associate Director, Global Marketing Oncology","AbbVie","LinkedIn","Lead","26Q1 LinkedIn - Super Bowl LX Report","2/13/2026"],
+  ["Melissa Lamming","Founder","BIG ENER-G Inc.","Meta","Lead","26Q1 Meta - Super Bowl LX Report","4/7/2026"],
+  ["Andy Sherman","Founder","Dish","Meta","Lead","26Q1 Meta - Super Bowl LX Report","4/7/2026"],
+  ["Mary DiMarco","Director of Marketing","Cohen's Fashion Optical","Meta","Lead","26Q1 Meta - Super Bowl LX Report","4/6/2026"],
+  ["Geoff Katz","Creative","The Walt Disney Company","Meta","Lead","26Q1 Meta - Super Bowl LX Report","4/5/2026"],
+  ["Melissa Norton","Group Acct Director","Lopez Negrete Communications","Meta","Contact","26Q1 Meta - Super Bowl LX Report","4/3/2026"],
+  ["Elizabeth Gilchrist","Head of Operations & EVP, Account Director","AARP Services / Grey NY","Meta","Lead","26Q1 Meta - Super Bowl LX Report","4/2/2026"],
+  ["Meghan Taylor","Planning Director","Ogilvy","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/10/2026"],
+  ["Ronan O'Mahony","Sr Director, Advertising and Social","T-Mobile","Meta","Contact","26Q1 Meta - Super Bowl LX Report","3/5/2026"],
+  ["Kerry Hill","Chief Production Officer","Omnicom","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/3/2026"],
+  ["Claribel Herrera Estevez","Director","TelevisaUnivision","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/2/2026"],
+  ["Dave Curtin","SVP Licensing + Branded Content","Paradigm Talent Agency","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/2/2026"],
+  ["Joe Baratelli","CCO","Rubin Postaer & Associates","Meta","Contact","26Q1 Meta - Super Bowl LX Report","3/2/2026"],
+  ["Al Dejewski","SVP Marketing","MilkPEP","Meta","Contact","26Q1 Meta - Super Bowl LX Report","3/1/2026"],
+  ["Kunsan Kim","SVP Brand Strategy","precisioneffect","Meta","Lead","26Q1 Meta - Super Bowl LX Report","2/27/2026"],
+  ["Kathy Neumann","CMO","Apartments.com","Meta","Lead","26Q1 Meta - Super Bowl LX Report","2/26/2026"],
+  ["Mike Rodionov","Senior Vice President","FCB Health","Meta","Lead","26Q1 Meta - Super Bowl LX Report","2/26/2026"],
+  ["Hope Hamilton","Sr Director Marketing","CableOne","Meta","Lead","26Q1 Meta - Super Bowl LX Report","2/18/2026"],
+  ["Ramesh Moorthy","Senior Insights Manager","McCormick & Company","Meta","Contact","26Q1 Meta - Super Bowl LX Report","2/18/2026"],
+  ["Marija Kosanovich","VP Client Experience","Assembly","Meta","Lead","26Q1 Meta - Super Bowl LX Report","2/25/2026"],
+  ["Juan Isaza","Strategic Planning Director","DDB Latina","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/6/2026"],
+  ["David Williams","Marketing Director","GOJO Industries","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/1/2026"],
+  ["Ali Ali","VP","Fidelity","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/5/2026"],
+  ["Francisco Cardenas","Principal, Digital & Social Media Strategy","Lerma Agency","Meta","Lead","26Q1 Meta - Super Bowl LX Report","3/4/2026"],
+  ["M Usman Arshad","Sales And Marketing Specialist","Amazon","LinkedIn","Lead","25Q4 LinkedIn - Buyer's Guide","4/8/2026"],
+  ["Denise Cleary","Account Executive","NFL","LinkedIn","Lead","25Q4 LinkedIn - Buyer's Guide","3/2/2026"],
+  ["Joe Moramarco","Sr. Account Executive","DIRECTV","LinkedIn","Lead","25Q4 LinkedIn - Buyer's Guide","3/6/2026"],
+  ["Geoff Klapisch","Senior Manager, Growth Marketing, TV & Offline","Chime","LinkedIn","Lead","25Q4 LinkedIn - Buyer's Guide","12/13/2025"],
+  ["Lesego Mokau","Go-To-Market Strategist, Acquisition Marketing","Fidelity Investments","LinkedIn","Lead","25Q4 LinkedIn - Buyer's Guide","3/6/2026"],
+  ["Srini Masanam","Global Head of Surveillance Data Quality","Citi","LinkedIn","Contact","25Q4 LinkedIn - Buyer's Guide","3/3/2026"],
+  ["Zuzana Purcell","VP, Director of Analytics","Publicis","Meta","Lead","25Q4 Meta - Buyer's Guide","1/8/2026"],
+  ["Tom McLoughlin","VP Sales","NY Interconnect","Meta","Contact","25Q4 Meta - Buyer's Guide","1/10/2026"],
+  ["Jay Freed","CMO","TV Now","Meta","Lead","25Q4 Meta - Buyer's Guide","1/12/2026"],
+  ["Tim Jasinski","CMO","Jasinski Direct","Meta","Lead","25Q4 Meta - Buyer's Guide","1/16/2026"],
+];
+
+const enterpriseBrands = ["disney","nfl","microsoft","salesforce","comcast","red bull","chevron","apple","t-mobile","fidelity","amazon","publicis","omnicom","ogilvy","ddb","fcb","grey","mccormick","directv","citi","abbvie","aarp","suntory","cumulus","televisaunivision","assembly","paradigm","ny interconnect","milkpep","chime","stockx"];
+const agencyBrands = ["two by four","rpa","rubin postaer","lopez negrete","lerma","ogilvy","ddb","fcb","grey","assembly","paradigm","omnicom","publicis"];
+const hotTitles = ["cmo","chief marketing","vp","vice president","svp","evp","director","head of","president","cco","ceo","founder","managing director","planning director","media director","global head","principal"];
+const warmTitles = ["manager","senior manager","strategist","executive","account executive","insights","partnerships","specialist","consultant"];
+const noiseWords = ["freelance","retired","teacher","professor","student","firefighter","pastor","security officer","n/a","self-employed","self employed","lecturer","congressional"];
+
+function score(lead) {
+  const [name, title, company, platform, type, campaign, date] = lead;
+  let s = 0; const reasons = [];
+  const tl = title.toLowerCase(), cl = company.toLowerCase();
+  if (type === "Contact") { s += 15; reasons.push("Contact"); }
+  if (hotTitles.some(t => tl.includes(t))) { s += 30; reasons.push("Senior title"); }
+  else if (warmTitles.some(t => tl.includes(t))) { s += 15; reasons.push("Mid-level title"); }
+  if (enterpriseBrands.some(b => cl.includes(b))) { s += 30; reasons.push("Enterprise brand"); }
+  else if (agencyBrands.some(b => cl.includes(b))) { s += 20; reasons.push("Agency"); }
+  if (platform === "LinkedIn") { s += 10; reasons.push("LinkedIn"); }
+  if (noiseWords.some(w => tl.includes(w) || cl.includes(w))) { s -= 20; reasons.push("Off-ICP"); }
+  s = Math.max(0, Math.min(100, s));
+  const tier = s >= 60 ? "Hot" : s >= 35 ? "Warm" : "Cold";
+  return { s, tier, reasons };
+}
+
+const leads = raw.map(l => { const r = score(l); return { name: l[0], title: l[1], company: l[2], platform: l[3], type: l[4], campaign: l[5], date: l[6], score: r.s, tier: r.tier, reasons: r.reasons }; });
+
+let filtered = [...leads], page = 0;
+const perPage = 15;
+let sortKey = "score";
+
+function setSort(k) {
+  sortKey = k;
+  document.getElementById("sortFilter").value = k;
+  applyFilters();
+}
+
+function buildMetrics(data) {
+  const hot = data.filter(l => l.tier === "Hot").length;
+  const warm = data.filter(l => l.tier === "Warm").length;
+  const li = data.filter(l => l.platform === "LinkedIn").length;
+  const avg = data.length ? Math.round(data.reduce((a,l) => a+l.score,0)/data.length) : 0;
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric"><div class="metric-label">Total leads</div><div class="metric-value">${data.length}</div><div class="metric-sub">across ${[...new Set(data.map(l=>l.campaign))].length} campaigns</div></div>
+    <div class="metric"><div class="metric-label">Hot — MAL ready</div><div class="metric-value" style="color:var(--hot)">${hot}</div><div class="metric-sub">${data.length ? Math.round(hot/data.length*100) : 0}% of total</div></div>
+    <div class="metric"><div class="metric-label">Warm — nurture</div><div class="metric-value" style="color:var(--warm)">${warm}</div><div class="metric-sub">${data.length ? Math.round(warm/data.length*100) : 0}% of total</div></div>
+    <div class="metric"><div class="metric-label">Avg score</div><div class="metric-value">${avg}</div><div class="metric-sub">LinkedIn: ${data.filter(l=>l.platform==="LinkedIn").length} · Meta: ${data.filter(l=>l.platform==="Meta").length}</div></div>
+  `;
+}
+
+function buildTable(data) {
+  const start = page * perPage;
+  const slice = data.slice(start, start + perPage);
+  const barColor = { Hot: "#C13B1B", Warm: "#A0620A", Cold: "#4A6741" };
+  if (!slice.length) {
+    document.getElementById("tbody").innerHTML = `<tr><td colspan="7" class="empty">No leads match your filters.</td></tr>`;
+  } else {
+    document.getElementById("tbody").innerHTML = slice.map(l => `
+      <tr>
+        <td><div class="name-cell">${l.name}</div><div class="company-cell" style="font-size:11px;margin-top:1px">${l.type}</div></td>
+        <td><div style="font-size:13px;font-weight:500">${l.company}</div><div class="title-cell">${l.title}</div></td>
+        <td><span class="campaign-pill">${l.campaign.replace("26Q1 ","Q1 '26 ").replace("25Q4 ","Q4 '25 ")}</span></td>
+        <td><span class="platform-dot platform-${l.platform === "LinkedIn" ? "li" : "meta"}"></span><span style="font-size:13px">${l.platform}</span></td>
+        <td>
+          <div class="score-wrap">
+            <span class="score-num">${l.score}</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:${l.score}%;background:${barColor[l.tier]}"></div></div>
+          </div>
+        </td>
+        <td><span class="tier-badge tier-${l.tier.toLowerCase()}">${l.tier}</span></td>
+        <td>${l.reasons.map(r=>`<span class="reason-tag">${r}</span>`).join("")}</td>
+      </tr>
+    `).join("");
+  }
+  const total = Math.ceil(data.length / perPage);
+  document.getElementById("pageInfo").textContent = `Showing ${start+1}–${Math.min(start+perPage, data.length)} of ${data.length} leads`;
+  document.getElementById("prevBtn").disabled = page === 0;
+  document.getElementById("nextBtn").disabled = page >= total - 1;
+}
+
+function applyFilters() {
+  const camp = document.getElementById("campFilter").value;
+  const tier = document.getElementById("tierFilter").value;
+  const plat = document.getElementById("platFilter").value;
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  sortKey = document.getElementById("sortFilter").value;
+
+  filtered = leads.filter(l =>
+    (!camp || l.campaign === camp) &&
+    (!tier || l.tier === tier) &&
+    (!plat || l.platform === plat) &&
+    (!search || l.name.toLowerCase().includes(search) || l.company.toLowerCase().includes(search) || l.title.toLowerCase().includes(search))
+  );
+
+  if (sortKey === "score") filtered.sort((a,b) => b.score - a.score);
+  else if (sortKey === "name") filtered.sort((a,b) => a.name.localeCompare(b.name));
+  else filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  page = 0;
+  buildMetrics(filtered);
+  buildTable(filtered);
+}
+
+window.changePage = (dir) => { page += dir; buildTable(filtered); };
+
+const campSelect = document.getElementById("campFilter");
+[...new Set(leads.map(l => l.campaign))].forEach(c => {
+  const o = document.createElement("option"); o.value = c; o.textContent = c; campSelect.appendChild(o);
+});
+
+["campFilter","tierFilter","platFilter","sortFilter"].forEach(id => {
+  document.getElementById(id).addEventListener("change", applyFilters);
+});
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+
+applyFilters();
+</script>
+</body>
+</html>
